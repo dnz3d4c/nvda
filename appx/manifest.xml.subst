@@ -31,7 +31,7 @@ MaxVersionTested="10.0.16278.100"
     <Applications>
       <Application 
 Id="mainExecutable" 
-Executable="nvda_noUIAccess.exe" 
+Executable="nvda_UIAccess.exe" 
 EntryPoint="Windows.FullTrustApplication"
 >
         <uap:VisualElements 

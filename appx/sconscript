@@ -40,7 +40,7 @@ excludedDistFiles=[
 	'nvda_eoaProxy.exe',
 	'nvda_service.exe',
 	'nvda_slave.exe',
-	'nvda_uiAccess.exe',
+	'nvda_noUiAccess.exe',
 	'lib/IAccessible2Proxy.dll',
 	'lib/minHook.dll',
 	'lib/NVDAHelperRemote.dll',
