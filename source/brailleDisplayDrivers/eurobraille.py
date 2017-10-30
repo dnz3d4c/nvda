@@ -27,7 +27,6 @@ EB_SYSTEM=b'S' # 0x53
 EB_MODE=b'R' # 0x52
 EB_KEY=b'K' # 0x4b
 EB_BRAILLE_DISPLAY=b'B' # 0x42
-#EB_EXT_KEY=b'X' # 0x58
 EB_END_KEY=b'E' # 0x45
 EB_KEY_INTERACTIVE=b'I' # 0x49
 EB_KEY_INTERACTIVE_SINGLE_CLICK=b'\x01'
@@ -131,7 +130,6 @@ DEVICE_TYPES={
 	0x11:"Esytime evo 32 standard",
 }
 
-
 USB_IDS_HID = {
 	"VID_C251&PID_1122", # Esys (version < 3.0, no SD card
 	"VID_C251&PID_1123", # Reserved
@@ -181,7 +179,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			pass
 		for portInfo in comPorts:
 			# Translators: Name of a serial communications port.
-			ports[portInfo["port"]] = _("Bluetooth: {portName}").format(portName=portInfo["friendlyName"])
+			ports[portInfo["port"]] = _("Serial: {portName}").format(portName=portInfo["friendlyName"])
 		return ports
 
 	@classmethod
@@ -356,23 +354,21 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 		"globalCommands.GlobalCommands": {
 			"braille_routeTo": ("br(eurobraille):routing","br(eurobraille):doubleRouting",),
 			"braille_scrollBack": (
-				"br(eurobraille):switch1Left", "br(eurobraille):switch2Left",
-				"br(eurobraille):switch3Left", "br(eurobraille):switch4Left",
-				"br(eurobraille):switch5Left", "br(eurobraille):switch6Left",
-				"br(eurobraille):l1", "br(eurobraille):l3",
-				"br(eurobraille):l5", "br(eurobraille):l7",
+				"br(eurobraille):switch1Left",
+				#"br(eurobraille):switch2Left",
+				#"br(eurobraille):switch3Left", "br(eurobraille):switch4Left",
+				#"br(eurobraille):switch5Left", "br(eurobraille):switch6Left",
 			),
 			"braille_scrollForward": (
-				"br(eurobraille):switch1Right", "br(eurobraille):switch2Right",
-				"br(eurobraille):switch3Right", "br(eurobraille):switch4Right",
-				"br(eurobraille):switch5Right", "br(eurobraille):switch6Right",
-				"br(eurobraille):l2", "br(eurobraille):l4",
-				"br(eurobraille):l6", "br(eurobraille):l8",
+				"br(eurobraille):switch1Right",
+				#"br(eurobraille):switch2Right",
+				#"br(eurobraille):switch3Right", "br(eurobraille):switch4Right",
+				#"br(eurobraille):switch5Right", "br(eurobraille):switch6Right",
 			),
 			"braille_toFocus": (
-				"br(eurobraille):switch1Left+scroll1Right", "br(eurobraille):switch2Left+scroll2Right",
-				"br(eurobraille):switch3Left+scroll3Right", "br(eurobraille):switch4Left+scroll4Right",
-				"br(eurobraille):switch5Left+scroll5Right", "br(eurobraille):switch6Left+scroll6Right",
+				"br(eurobraille):switch1Left+switch1Right", "br(eurobraille):switch2Left+switch2Right",
+				"br(eurobraille):switch3Left+switch3Right", "br(eurobraille):switch4Left+switch4Right",
+				"br(eurobraille):switch5Left+switch5Right", "br(eurobraille):switch6Left+switch6Right",
 			),
 			"kb:enter": ("br(eurobraille):joystick2Center",),
 			"kb:upArrow": ("br(eurobraille):joystick2Up",),
@@ -387,6 +383,9 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			"review_nextCharacter": ("br(eurobraille):joystick1Right",),
 			"reviewMode_previous": ("br(eurobraille):joystick1Left+joystick1Up",),
 			"reviewMode_next": ("br(eurobraille):joystick1Right+joystick1Down",),
+			# Esys has a dedicated key for backspace and combines backspace and space to perform a return.
+			"braille_eraseLastCell": ("br(eurobraille):backSpace",),
+			"braille_enter": ("br(eurobraille):backSpace+space",),
 		},
 	})
 
