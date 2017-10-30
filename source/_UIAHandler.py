@@ -12,6 +12,7 @@ from comtypes import *
 import weakref
 import threading
 import time
+import config
 import api
 import appModuleHandler
 import queueHandler
@@ -305,7 +306,13 @@ class UIAHandler(COMObject):
 		if appModule and appModule.isBadUIAWindow(hwnd):
 			return False
 		# Ask the window if it supports UIA natively
-		return windll.UIAutomationCore.UiaHasServerSideProvider(hwnd)
+		res=windll.UIAutomationCore.UiaHasServerSideProvider(hwnd)
+		if res:
+			# the window does support UIA natively, but
+			if windowClass=="_WwG" and not (config.conf['UIA']['useInMSWordWhenAvailable'] or not appModule.helperLocalBindingHandle):
+				# Microsoft Word should not use UIA unless we can't inject or the user explicitly chose to use UIA with Microsoft word
+				return False
+		return res
 
 	def isUIAWindow(self,hwnd):
 		now=time.time()
