@@ -162,13 +162,7 @@ class WordDocument(UIADocumentWithTableNavigation,WordDocumentNode,WordDocumentB
 	shouldCreateTreeInterceptor=False
 
 	def script_increaseDecreaseFontSize(self,gesture):
-		gesture.send()
-		info=self.makeTextInfo(textInfos.POSITION_CARET)
-		info.expand(textInfos.UNIT_CHARACTER)
-		formatConfig=defaultdict(lambda: False,reportFontSize=True)
-		field=info._getFormatFieldAtRange(info._rangeObj,formatConfig,ignoreMixedValues=True).field
-		# Translators: a message when increasing or decreasing font size in Microsoft Word
-		ui.message(_("{size:s} font").format(size=field['font-size']))
+		self._formatChangeScriptHelper(gesture,reportFontSize=True)
 
 	def _getFormatFieldAtPosition(self,info,formatConfig):
 		formatField=textInfos.FormatField()
@@ -180,13 +174,11 @@ class WordDocument(UIADocumentWithTableNavigation,WordDocumentNode,WordDocumentB
 	def _formatChangeScriptHelper(self,gesture,**kwargs):
 		formatConfig=defaultdict(lambda: False,**kwargs)
 		info=self.makeTextInfo(textInfos.POSITION_SELECTION)
-		if info.isCollapsed:
-			info.expand(textInfos.UNIT_CHARACTER)
+		info.expand(textInfos.UNIT_CHARACTER)
 		oldFormatField=self._getFormatFieldAtPosition(info,formatConfig)
 		gesture.send()
 		info=self.makeTextInfo(textInfos.POSITION_SELECTION)
-		if info.isCollapsed:
-			info.expand(textInfos.UNIT_CHARACTER)
+		info.expand(textInfos.UNIT_CHARACTER)
 		newFormatField=self._getFormatFieldAtPosition(info,formatConfig)
 		text=info.getFormatFieldSpeech(newFormatField,attrsCache=oldFormatField,formatConfig=formatConfig,extraDetail=True)
 		ui.message(text)
