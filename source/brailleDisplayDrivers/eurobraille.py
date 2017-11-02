@@ -16,6 +16,7 @@ import brailleInput
 import hwIo
 from baseObject import AutoPropertyObject
 import wx
+import tones
 
 TIMEOUT = 0.2
 BAUD_RATE = 9600
@@ -23,6 +24,7 @@ PARITY = serial.PARITY_EVEN
 
 STX=b'\x02'
 ETX=b'\x03'
+ACK=b'\x06'
 EB_SYSTEM=b'S' # 0x53
 EB_MODE=b'R' # 0x52
 EB_KEY=b'K' # 0x4b
@@ -204,8 +206,11 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 		super(BrailleDisplayDriver, self).__init__()
 		self.numCells = 0
 		self.deviceType = None
-		self._deviceData={}
+		self._deviceData = {}
+		self.receivesAck = False
 		self._frameLength = None
+		self.awaitingAck = False
+		self._frame = 0x20
 		if port == "auto":
 			tryPorts = self._getAutoPorts(hwPortUtils.listComPorts(onlyAvailable=True))
 		else:
@@ -261,35 +266,40 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 		else:
 			byte0= data
 			stream = self._dev
+		assert(byte0=="\x00")
 		byte1=stream.read(1)
-		if byte1 != STX:
-			log.error("Don't know yet how tho handle this data %r"%[hex(ord(c)) for c in data[:3]])
-			return
-		length = bytesToInt(stream.read(2))-2 # lenght includes the lenght itself
-		packet = stream.read(length)
-		assert(stream.read(1)==ETX)
-		packetType = packet[0]
-		packetSubType = packet[1]
-		packetData = packet[2:] if length>2 else ""
-		if packetType==EB_SYSTEM:
-			self._handleSystemPacket(packetSubType, packetData.rstrip("\x00 "))
-		elif packetType==EB_MODE and packetSubType  == EB_MODE_PILOT:
-			# This packet means the display is returning from internal mode
-			# Rewrite the current display content
-			braille.handler.update()
-		elif packetType==EB_KEY:
-			self._handleKeyPacket(packetSubType, packetData)
-		elif packetType==EB_IRIS_TEST and packetSubType==EB_IRIS_TEST_sub:
-			# Ping command sent by Iris every two seconds, send it back on the main thread.
-			wx.CallAfter(self._sendPacket, packetType, packetSubType, packetData)
-		elif packetType==EB_VISU:
-			log.debug("Ignoring visualisation packet")
-		else:
-			log.debug("Unexpected packet: type %s, subtype %s, data %s"%(
-				hex(ord(packetType)),
-				hex(ord(packetSubType)),
-				"".join(hex(ord(c)) for c in packetData)
-			))
+		if byte1 == ACK:
+			frame=ord(stream.read(1))
+			self._handleACK()
+		elif byte1 == STX:
+			length = bytesToInt(stream.read(2))-2 # lenght includes the lenght itself
+			packet = stream.read(length)
+			assert(stream.read(1)==ETX)
+			packetType = packet[0]
+			packetSubType = packet[1]
+			packetData = packet[2:] if length>2 else ""
+			if packetType==EB_SYSTEM:
+				self._handleSystemPacket(packetSubType, packetData.rstrip("\x00 "))
+			elif packetType==EB_MODE and packetSubType  == EB_MODE_PILOT:
+				# This packet means the display is returning from internal mode
+				# Rewrite the current display content
+				braille.handler.update()
+			elif packetType==EB_KEY:
+				self._handleKeyPacket(packetSubType, packetData)
+			elif packetType==EB_IRIS_TEST and packetSubType==EB_IRIS_TEST_sub:
+				# Ping command sent by Iris every two seconds, send it back on the main thread.
+				wx.CallAfter(self._sendPacket, packetType, packetSubType, packetData)
+			elif packetType==EB_VISU:
+				log.debug("Ignoring visualisation packet")
+			else:
+				log.debug("Ignoring packet: type %s, subtype %s, data %s"%(
+					packetType,
+					packetSubType,
+					packetData
+				))
+
+	def _handleAck(self):
+		self.awaitingAck = False
 
 	def _handleSystemPacket(self, type, data):
 		if type==EB_SYSTEM_TYPE:
@@ -307,6 +317,14 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			self.numCells=ord(data)
 		elif type==EB_SYSTEM_FRAME_LENGTH:
 			self._frameLength=bytesToInt(data)
+		elif type==EB_SYSTEM_PROTOCOL:
+			protocol=data.rstrip("\x00 ")
+			try:
+				version=float(protocol[:4])
+			except ValueError:
+				pass
+			else:
+				self.receivesAck = version>=3.0
 		elif type==EB_SYSTEM_IDENTITY:
 			return # End of system information
 		self._deviceData[type]=data.rstrip("\x00 ")
@@ -337,14 +355,22 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 
 	def _sendPacket(self, packetType, packetSubType, packetData=""):
 		packetSize=len(packetData)+4
-		self._dev.write("\x00{STX}{size}{packetType}{packetSubType}{packetData}{ETX}".format(
-			STX=STX,
-			size=chr((packetSize>>8)&0xff)+chr(packetSize&0xff),
-			packetType=packetType,
-			packetSubType=packetSubType,
-			packetData=packetData,
-			ETX=ETX
-		))
+		packet=[
+			"\x00",
+			STX,
+			chr((packetSize>>8)&0xff),
+			chr(packetSize&0xff),
+			packetType,
+			packetSubType,
+			packetData,
+			ETX
+		]
+		if self.receivesAck:
+			frame=self._frame
+			packet.insert(-1,chr(frame))
+			self.awaitingAck[frame]=packet
+			self._frame=frame+1 if frame<0x7f else 0x20
+		self._dev.write("".join(packet))
 
 	def display(self, cells):
 		# cells will already be padded up to numCells.
