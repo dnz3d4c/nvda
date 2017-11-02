@@ -18,7 +18,6 @@ from baseObject import AutoPropertyObject
 import wx
 import tones
 
-TIMEOUT = 0.2
 BAUD_RATE = 9600
 PARITY = serial.PARITY_EVEN
 
@@ -165,6 +164,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 	# Translators: Names of braille displays.
 	description = _("Eurobraille Esys/Esytime/Iris displays")
 	isThreadSafe = True
+	timeout = 0.2
 
 	@classmethod
 	def check(cls):
@@ -223,7 +223,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 				if self.isHid:
 					self._dev = hwIo.Hid(port, onReceive=self._onReceive)
 				else:
-					self._dev = hwIo.Serial(port, baudrate=BAUD_RATE, timeout=TIMEOUT, writeTimeout=TIMEOUT, onReceive=self._onReceive)
+					self._dev = hwIo.Serial(port, baudrate=BAUD_RATE, timeout=self.timeout, writeTimeout=self.timeout, onReceive=self._onReceive)
 			except EnvironmentError:
 				continue
 
@@ -231,7 +231,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			self._sendPacket(EB_SYSTEM, EB_SYSTEM_IDENTITY)
 			# A device identification results in multiple packets.
 			# Make sure we've received everything before we continue
-			while self._dev.waitForRead(TIMEOUT):
+			while self._dev.waitForRead(self.timeout):
 				continue
 			if self.numCells and self.deviceType:
 				# A display responded.
@@ -270,7 +270,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 		byte1=stream.read(1)
 		if byte1 == ACK:
 			frame=ord(stream.read(1))
-			self._handleACK()
+			self._handleACK(frame)
 		elif byte1 == STX:
 			length = bytesToInt(stream.read(2))-2 # lenght includes the lenght itself
 			packet = stream.read(length)
@@ -298,8 +298,8 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 					packetData
 				))
 
-	def _handleAck(self):
-		self.awaitingAck = False
+	def _handleAck(self, frame):
+		super(BrailleDisplayDriver,self)._handleAck()
 
 	def _handleSystemPacket(self, type, data):
 		if type==EB_SYSTEM_TYPE:
