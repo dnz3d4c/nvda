@@ -1967,7 +1967,7 @@ class BrailleDisplayDriver(baseObject.AutoPropertyObject):
 	_awaitingAck = False
 	#: Maximum timeout to use for communication with a device (in seconds).
 	#: This can be used for serial connections.
-	#: Furthermore, it is used by L{braille._BgThread} to stop waiting for missed acknowledgement packets.
+	#: Furthermore, it is used by L{_BgThread} to stop waiting for missed acknowledgement packets.
 	#: @type: float
 	timeout = 0.2
 
