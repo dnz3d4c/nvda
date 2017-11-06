@@ -16,7 +16,7 @@ import brailleInput
 import hwIo
 from baseObject import AutoPropertyObject
 import wx
-import tones
+import threading
 
 BAUD_RATE = 9600
 PARITY = serial.PARITY_EVEN
@@ -207,10 +207,10 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 		self.numCells = 0
 		self.deviceType = None
 		self._deviceData = {}
-		self.receivesAck = False
+		self._awaitingFrameReceipts  = {}
 		self._frameLength = None
-		self.awaitingAck = False
 		self._frame = 0x20
+		self._frameLock = threading.Lock()
 		if port == "auto":
 			tryPorts = self._getAutoPorts(hwPortUtils.listComPorts(onlyAvailable=True))
 		else:
@@ -221,7 +221,12 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			self.isHid = portType == "USB HID"
 			try:
 				if self.isHid:
-					self._dev = hwIo.Hid(port, onReceive=self._onReceive)
+					self._dev = hwIo.Hid(
+						port,
+						onReceive=self._onReceive,
+						# Eurobraille wants us not to block other application's access to this handle.
+						exclusiveAccess=False
+					)
 				else:
 					self._dev = hwIo.Serial(port, baudrate=BAUD_RATE, timeout=self.timeout, writeTimeout=self.timeout, onReceive=self._onReceive)
 			except EnvironmentError:
@@ -270,7 +275,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 		byte1=stream.read(1)
 		if byte1 == ACK:
 			frame=ord(stream.read(1))
-			self._handleACK(frame)
+			self._handleAck(frame)
 		elif byte1 == STX:
 			length = bytesToInt(stream.read(2))-2 # lenght includes the lenght itself
 			packet = stream.read(length)
@@ -299,6 +304,10 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 				))
 
 	def _handleAck(self, frame):
+		try:
+			del self._awaitingFrameReceipts[frame]
+		except KeyError:
+			log.debugWarning("Received ACK for unregistered frame %d"%frame)
 		super(BrailleDisplayDriver,self)._handleAck()
 
 	def _handleSystemPacket(self, type, data):
@@ -324,7 +333,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			except ValueError:
 				pass
 			else:
-				self.receivesAck = version>=3.0
+				self.receivesAckPackets = version>=3.0
 		elif type==EB_SYSTEM_IDENTITY:
 			return # End of system information
 		self._deviceData[type]=data.rstrip("\x00 ")
@@ -365,11 +374,12 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			packetData,
 			ETX
 		]
-		if self.receivesAck:
-			frame=self._frame
-			packet.insert(-1,chr(frame))
-			self.awaitingAck[frame]=packet
-			self._frame=frame+1 if frame<0x7f else 0x20
+		if self.receivesAckPackets:
+			with self._frameLock:
+				frame=self._frame
+				packet.insert(-1,chr(frame))
+				self._awaitingFrameReceipts[frame]=packet
+				self._frame=frame+1 if frame<0x7F else 0x20
 		self._dev.write("".join(packet))
 
 	def display(self, cells):
