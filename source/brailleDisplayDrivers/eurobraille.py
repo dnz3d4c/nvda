@@ -225,11 +225,12 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 						port,
 						onReceive=self._onReceive,
 						# Eurobraille wants us not to block other application's access to this handle.
-						exclusiveAccess=False
+						exclusiveAccess=True
 					)
 				else:
 					self._dev = hwIo.Serial(port, baudrate=BAUD_RATE, timeout=self.timeout, writeTimeout=self.timeout, onReceive=self._onReceive)
 			except EnvironmentError:
+				log.debugWarning("Error while connecting to port %r"%port, exc_info=True)
 				continue
 
 			# Request device identification
