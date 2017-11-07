@@ -2432,6 +2432,31 @@ Due to this, and to maintain compatibility with other screen readers in Taiwan, 
 | Scroll braille display forward | numpadPlus | 
 %kc:endInclude
 
+++ Eurobraille Esys/Esytime/Iris displays ++
+The Esys, Esytime and Iris displays from [Eurobraille http://www.eurobraille.fr/] are supported by NVDA.
+Esys and Esytime-Evo devices are supported when connected via USB or bluetooth.
+Older Esytime devices only support USB.
+Iris displays can only be connected via a serial port.
+Therefore, for these displays, you should select the port to which the display is connected after you have chosen this driver in the Braille Settings dialog.
+
+Iris and Esys displays have a braille keyboard with 10 keys.
+Of the two keys placed like a space bar, the left key is corresponding to the backspace key and the right key to the space key.
+
+Following are the key assignments for these displays with NVDA.
+Please see the display's documentation for descriptions of where these keys can be found.
+%kc:beginInclude
+|| Name | Key |
+| Scroll braille display back | esys:switch1-6left |
+| Scroll braille display forward | esys:switch1-6Right |
+| Route to braille cell | routing, doubleRouting|
+| upArrow key | joystick2Up |
+| downArrow key | joystick2Down |
+| leftArrow key | joystick2Left |
+| rightArrow key | joystick2Right |
+| enter key | dot8, backspace+space |
+| backspace key | dot7, backspace |
+%kc:endInclude
+
 ++ BRLTTY ++
 [BRLTTY http://www.brltty.com/] is a separate program which can be used to support many more braille displays.
 In order to use this, you need to install [BRLTTY for Windows http://www.brltty.com/download.html].
