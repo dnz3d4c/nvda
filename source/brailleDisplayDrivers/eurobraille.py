@@ -49,6 +49,7 @@ EB_SYSTEM_SOFTWARE=b'W'
 EB_SYSTEM_PROTOCOL=b'P'
 EB_SYSTEM_FRAME_LENGTH=b'M'
 EB_SYSTEM_DATE_AND_TIME=b'D'
+EB_ENCRYPTION_KEY=b'Z'
 EB_MODE_PILOT=b'P'
 EB_MODE_INTERNAL=b'I'
 EB_MODE_MENU=b'M'
@@ -297,6 +298,8 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 				wx.CallAfter(self._sendPacket, packetType, packetSubType, packetData)
 			elif packetType==EB_VISU:
 				log.debug("Ignoring visualisation packet")
+			elif packetType==EB_ENCRYPTION_KEY:
+				log.debug("Ignoring encryption key packet")
 			else:
 				log.debug("Ignoring packet: type %s, subtype %s, data %s"%(
 					packetType,
