@@ -285,7 +285,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			packetSubType = packet[1]
 			packetData = packet[2:] if length>2 else ""
 			if packetType==EB_SYSTEM:
-				self._handleSystemPacket(packetSubType, packetData.rstrip("\x00 "))
+				self._handleSystemPacket(packetSubType, packetData)
 			elif packetType==EB_MODE and packetSubType  == EB_MODE_PILOT:
 				# This packet means the display is returning from internal mode
 				# Rewrite the current display content
