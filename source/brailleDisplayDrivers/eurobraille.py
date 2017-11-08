@@ -36,6 +36,7 @@ EB_KEY_INTERACTIVE_REPETITION=b'\x02'
 EB_KEY_INTERACTIVE_DOUBLE_CLICK=b'\x03'
 EB_KEY_BRAILLE='B' # 0x42
 EB_KEY_COMMAND=b'C' # 0x43
+EB_KEY_QWERTY=b'Z' # 0x5a
 EB_KEY_USB=b'u' # 0x75
 EB_KEY_USB_HID_MODE=b'U' # 0x55
 EB_BRAILLE_DISPLAY_STATIC=b'S' # 0x53
@@ -50,7 +51,7 @@ EB_SYSTEM_SOFTWARE=b'W'
 EB_SYSTEM_PROTOCOL=b'P'
 EB_SYSTEM_FRAME_LENGTH=b'M'
 EB_SYSTEM_DATE_AND_TIME=b'D'
-EB_ENCRYPTION_KEY=b'Z'
+EB_ENCRYPTION_KEY=b'Z' # 0x5a
 EB_MODE_PILOT=b'P'
 EB_MODE_INTERNAL=b'I'
 EB_MODE_MENU=b'M'
@@ -350,6 +351,9 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 		if group == EB_KEY_USB:
 			self._hidInput = bool(arg)
 			return
+		if group == EB_KEY_QWERTY:
+			log.debug("Ignoring Iris AZERTY/QWERTY input")
+			return
 		if group == EB_KEY_INTERACTIVE and data[0]==EB_KEY_INTERACTIVE_REPETITION:
 			log.debug("Ignoring routing key %d repetition"%(ord(data[1])-1))
 			return
@@ -406,7 +410,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 			return
 		# Cache the current input state
 		state = self._hidInput
-		self._sendPacket(EB_KEY, EB_KEY_USB, str(int(not self._hidInput)))
+		self._sendPacket(EB_KEY, EB_KEY_USB, str(int(not state)))
 		for i in xrange(3):
 			self._dev.waitForRead(self.timeout)
 			if state is not self._hidInput:
