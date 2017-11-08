@@ -17,6 +17,7 @@ import hwIo
 from baseObject import AutoPropertyObject
 import wx
 import threading
+from globalCommands import SCRCAT_BRAILLE
 
 BAUD_RATE = 9600
 PARITY = serial.PARITY_EVEN
@@ -35,8 +36,8 @@ EB_KEY_INTERACTIVE_REPETITION=b'\x02'
 EB_KEY_INTERACTIVE_DOUBLE_CLICK=b'\x03'
 EB_KEY_BRAILLE='B' # 0x42
 EB_KEY_COMMAND=b'C' # 0x43
-#EB_KEY_USB_HID_MODE=b'U' # 0x55
-#EB_KEY_USB=b'u' # 0x75
+EB_KEY_USB=b'u' # 0x75
+EB_KEY_USB_HID_MODE=b'U' # 0x55
 EB_BRAILLE_DISPLAY_STATIC=b'S' # 0x53
 EB_SYSTEM_IDENTITY=b'I' # 0x49
 EB_SYSTEM_NAME=b'N' # 0x4e
@@ -212,6 +213,8 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 		self._frameLength = None
 		self._frame = 0x20
 		self._frameLock = threading.Lock()
+		self._hidInput = False
+
 		if port == "auto":
 			tryPorts = self._getAutoPorts(hwPortUtils.listComPorts(onlyAvailable=True))
 		else:
@@ -344,6 +347,9 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 
 	def _handleKeyPacket(self, group, data):
 		arg = bytesToInt(data)
+		if group == EB_KEY_USB:
+			self._hidInput = bool(arg)
+			return
 		if group == EB_KEY_INTERACTIVE and data[0]==EB_KEY_INTERACTIVE_REPETITION:
 			log.debug("Ignoring routing key %d repetition"%(ord(data[1])-1))
 			return
@@ -389,6 +395,42 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver):
 	def display(self, cells):
 		# cells will already be padded up to numCells.
 		self._sendPacket(EB_BRAILLE_DISPLAY, EB_BRAILLE_DISPLAY_STATIC, "".join(chr(cell) for cell in cells))	
+
+	def _toggleHidInput(self):
+		def announceUnavailableMessage():
+			# Translators: Message when Eurobraille HID keyboard simulation is unavailable.
+			ui.message(_("HID keyboard input simulation is unavailable."))
+
+		if not self.isHid:
+			announceUnavailableMessage()
+			return
+		# Cache the current input state
+		state = self._hidInput
+		self._sendPacket(EB_KEY, EB_KEY_USB, str(int(not self._hidInput)))
+		for i in xrange(3):
+			self._dev.waitForRead(self.timeout)
+			if state is not self._hidInput:
+				break
+		if state is self._hidInput:
+			announceUnavailableMessage()
+			return
+		if self._hidInput:
+			# Translators: Message when Eurobraille HID keyboard simulation is enabled.
+			ui.message(_('HID keyboard simulation enabled'))
+		else:
+			# Translators: Message when Eurobraille HID keyboard simulation is disabled.
+			ui.message(_('HID keyboard simulation disabled'))
+
+	scriptCategory = SCRCAT_BRAILLE
+
+	def script_toggleHidInput(self, _gesture):
+		self._toggleHidInput()
+	# Translators: Description of the script for Eurobraille displays that toggles HID keyboard simulation.
+	script_toggleHidInput.__doc__ = _("Toggle eurobraille HID keyboard simulation")
+
+	__gestures = {
+		"br(eurobraille):switch1Left+switch1Right+switch2Left+switch2Right": "toggleHidInput",
+	}
 
 	gestureMap = inputCore.GlobalGestureMap({
 		"globalCommands.GlobalCommands": {
