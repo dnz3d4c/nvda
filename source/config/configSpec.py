@@ -191,7 +191,7 @@ schemaVersion = integer(min=0, default={latestSchemaVersion})
 	reportCompositionStringChanges = boolean(default=True)
 
 [debugLog]
-	hwIo = boolean(default=false)
+	hwIo = boolean(default=true)
 	audioDucking = boolean(default=false)
 
 [uwpOcr]
