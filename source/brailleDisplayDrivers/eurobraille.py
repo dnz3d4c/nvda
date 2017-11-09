@@ -315,13 +315,14 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 
 	def _handleAck(self, frame):
 		try:
-			del self._awaitingFrameReceipts[frame]
-		except KeyError:
-			log.debugWarning("Received ACK for unregistered frame %d"%frame)
-		try:
 			super(BrailleDisplayDriver,self)._handleAck()
 		except NotImplementedError:
 			log.debugWarning("Received ACK for frame %d while ACK handling is disabled"%frame)
+		else:
+			try:
+				del self._awaitingFrameReceipts[frame]
+			except KeyError:
+				log.debugWarning("Received ACK for unregistered frame %d"%frame)
 
 	def _handleSystemPacket(self, type, data):
 		if type==EB_SYSTEM_TYPE:
