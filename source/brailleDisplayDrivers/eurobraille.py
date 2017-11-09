@@ -318,7 +318,10 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			del self._awaitingFrameReceipts[frame]
 		except KeyError:
 			log.debugWarning("Received ACK for unregistered frame %d"%frame)
-		super(BrailleDisplayDriver,self)._handleAck()
+		try:
+			super(BrailleDisplayDriver,self)._handleAck()
+		except NotImplementedError:
+			log.debugWarning("Received ACK for frame %d while ACK handling is disabled"%frame)
 
 	def _handleSystemPacket(self, type, data):
 		if type==EB_SYSTEM_TYPE:
@@ -342,8 +345,9 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 				version=float(protocol[:4])
 			except ValueError:
 				pass
-			else:
-				self.receivesAckPackets = version>=3.0
+# Disabling ACK packet handling for now
+#			else:
+#				self.receivesAckPackets = version>=3.0
 		elif type==EB_SYSTEM_IDENTITY:
 			return # End of system information
 		self._deviceData[type]=data.rstrip("\x00 ")
@@ -421,9 +425,9 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			self._dev.waitForRead(self.timeout)
 			if state is not self._hidInput:
 				break
-#		if state is self._hidInput:
-#			announceUnavailableMessage()
-#			return
+		if state is self._hidInput:
+			announceUnavailableMessage()
+			return
 		if self._hidInput:
 			# Translators: Message when Eurobraille HID keyboard simulation is enabled.
 			ui.message(_('HID keyboard simulation enabled'))
