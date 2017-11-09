@@ -272,14 +272,15 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 	def _onReceive(self, data):
 		if self.isHid:
 			# data contains the entire packet.
+			# HID Packets start with 0x00.
 			byte0 = data[0]
+			assert byte0=="\x00", "byte 0 is %r"%byte0
+			byte1 = data[1]
 			stream = StringIO(data)
-			stream.seek(1)
+			stream.seek(2)
 		else:
-			byte0= data
+			byte1= data
 			stream = self._dev
-		assert byte0=="\x00", "byte 0 is %r"%byte0
-		byte1=stream.read(1)
 		if byte1 == ACK:
 			frame=ord(stream.read(1))
 			self._handleAck(frame)
@@ -335,7 +336,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			self.numCells=ord(data)
 		elif type==EB_SYSTEM_FRAME_LENGTH:
 			self._frameLength=bytesToInt(data)
-		elif type==EB_SYSTEM_PROTOCOL:
+		elif type==EB_SYSTEM_PROTOCOL and self.isHid:
 			protocol=data.rstrip("\x00 ")
 			try:
 				version=float(protocol[:4])
@@ -379,8 +380,11 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 
 	def _sendPacket(self, packetType, packetSubType, packetData=""):
 		packetSize=len(packetData)+4
-		packet=[
-			"\x00",
+		packet=[]
+		if self.isHid:
+			# HID Packets start with 0x00.
+			packet.append("\x00")
+		packet.extend([
 			STX,
 			chr((packetSize>>8)&0xff),
 			chr(packetSize&0xff),
@@ -388,7 +392,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			packetSubType,
 			packetData,
 			ETX
-		]
+		])
 		if self.receivesAckPackets:
 			with self._frameLock:
 				frame=self._frame
