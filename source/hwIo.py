@@ -225,22 +225,22 @@ class Hid(IoBase):
 	"""Raw I/O for HID devices.
 	"""
 
-	def __init__(self, path, onReceive, exclusiveAccess=True):
+	def __init__(self, path, onReceive, exclusive=True):
 		"""Constructor.
 		@param path: The device path.
 			This can be retrieved using L{hwPortUtils.listHidDevices}.
 		@type path: unicode
 		@param onReceive: A callable taking a received input report as its only argument.
 		@type onReceive: callable(str)
-		@param exclusiveAccess: Whether to block other application's access to this device.
-		@type exclusiveAccess: bool
+		@param exclusive: Whether to block other application's access to this device.
+		@type exclusive: bool
 		"""
 		if _isDebug():
 			log.debug("Opening device %s" % path)
 		handle = CreateFile(
 			path,
 			winKernel.GENERIC_READ | winKernel.GENERIC_WRITE,
-			0 if exclusiveAccess else winKernel.FILE_SHARE_READ|winKernel.FILE_SHARE_WRITE,
+			0 if exclusive else winKernel.FILE_SHARE_READ|winKernel.FILE_SHARE_WRITE,
 			None,
 			winKernel.OPEN_EXISTING,
 			FILE_FLAG_OVERLAPPED,
