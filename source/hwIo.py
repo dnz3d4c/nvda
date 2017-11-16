@@ -80,8 +80,7 @@ class IoBase(object):
 		if _isDebug():
 			log.debug("Write: %r" % data)
 		size = self._writeSize or len(data)
-		buf = ctypes.create_string_buffer(size)
-		buf.raw = data
+		buf = ctypes.create_string_buffer(data, size)
 		if not ctypes.windll.kernel32.WriteFile(self._file, data, size, None, byref(self._writeOl)):
 			if ctypes.GetLastError() != ERROR_IO_PENDING:
 				if _isDebug():

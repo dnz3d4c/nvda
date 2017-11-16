@@ -19,6 +19,7 @@ import wx
 import threading
 from globalCommands import SCRCAT_BRAILLE
 import ui
+import time
 
 BAUD_RATE = 9600
 PARITY = serial.PARITY_EVEN
@@ -346,16 +347,15 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 				version=float(protocol[:4])
 			except ValueError:
 				pass
-# Disabling ACK packet handling for now
-#			else:
-#				self.receivesAckPackets = version>=3.0
+			else:
+				self.receivesAckPackets = version>=3.0
 		elif type==EB_SYSTEM_IDENTITY:
 			return # End of system information
 		self._deviceData[type]=data.rstrip("\x00 ")
 
 	def _handleKeyPacket(self, group, data):
 		arg = bytesToInt(data)
-		if group == EB_KEY_USB:
+		if group == EB_KEY_USB_HID_MODE:
 			self._hidInput = bool(arg)
 			return
 		if group == EB_KEY_QWERTY:
@@ -415,13 +415,12 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			# Translators: Message when Eurobraille HID keyboard simulation is unavailable.
 			ui.message(_("HID keyboard input simulation is unavailable."))
 
-		if not self.isHid:
+		if self.keys!=KEYS_ESITIME or not self.isHid:
 			announceUnavailableMessage()
 			return
 		# Cache the current input state
 		state = self._hidInput
-		self._sendPacket(EB_KEY, EB_KEY_USB, str(int(not state)))
-		self._sendPacket(EB_SYSTEM, EB_SYSTEM_IDENTITY)
+		self._sendPacket(EB_KEY, EB_KEY_USB_HID_MODE, str(int(not state)))
 		for i in xrange(3):
 			self._dev.waitForRead(self.timeout)
 			if state is not self._hidInput:
@@ -444,7 +443,6 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 
 	__gestures = {
 		"br(eurobraille):routing+switch1Left": "toggleHidInput",
-		"br(eurobraille):routing+switch1Right": "toggleHidInput",
 	}
 
 	gestureMap = inputCore.GlobalGestureMap({
@@ -452,12 +450,14 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			"braille_routeTo": ("br(eurobraille):routing","br(eurobraille):doubleRouting",),
 			"braille_scrollBack": (
 				"br(eurobraille):switch1Left",
+				"br(eurobraille):l1",
 				#"br(eurobraille):switch2Left",
 				#"br(eurobraille):switch3Left", "br(eurobraille):switch4Left",
 				#"br(eurobraille):switch5Left", "br(eurobraille):switch6Left",
 			),
 			"braille_scrollForward": (
 				"br(eurobraille):switch1Right",
+				"br(eurobraille):l8",
 				#"br(eurobraille):switch2Right",
 				#"br(eurobraille):switch3Right", "br(eurobraille):switch4Right",
 				#"br(eurobraille):switch5Right", "br(eurobraille):switch6Right",
@@ -476,13 +476,16 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			# Esys has a dedicated key for backspace and combines backspace and space to perform a return.
 			"braille_eraseLastCell": ("br(eurobraille):backSpace",),
 			"braille_enter": ("br(eurobraille):backSpace+space",),
-			"kb:insert": ("br(eurobraille):dot3+dot5+space",),
+			"kb:insert": (
+				"br(eurobraille):dot3+dot5+space",
+				"br(eurobraille):l7",
+			),
 			"kb:delete": ("br(eurobraille):dot3+dot6+space",),
 			"kb:home": ("br(eurobraille):dot1+dot2+dot3+space", "br(eurobraille):joystick2Left+joystick2Up",),
 			"kb:end": ("br(eurobraille):dot4+dot5+dot6+space", "br(eurobraille):joystick2Right+joystick2Down",),
 			"kb:leftArrow": ("br(eurobraille):dot2+space", "br(eurobraille):joystick2Left",),
 			"kb:rightArrow": ("br(eurobraille):dot5+space", "br(eurobraille):joystick2Right",),
-			"kb:upArrow": ("br(eurobraille):dot4+space", "br(eurobraille):joystick2Up",),
+			"kb:upArrow": ("br(eurobraille):dot1+space", "br(eurobraille):joystick2Up",),
 			"kb:downArrow": ("br(eurobraille):dot6+space", "br(eurobraille):joystick2Down",),
 			"kb:pageUp": ("br(eurobraille):dot1+dot3+space",),
 			"kb:pageDown": ("br(eurobraille):dot4+dot6+space",),
@@ -490,20 +493,26 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			"kb:2": ("br(eurobraille):dot1+dot2+dot6+backspace",),
 			"kb:3": ("br(eurobraille):dot1+dot4+dot6+backspace",),
 			"kb:4": ("br(eurobraille):dot1+dot4+dot5+dot6+backspace",),
-			"kb:5": ("br(eurobraille):dot1+dot5+backspace",),
+			"kb:5": ("br(eurobraille):dot1+dot5+dot6+backspace",),
 			"kb:6": ("br(eurobraille):dot1+dot2+dot4+dot6+backspace",),
 			"kb:7": ("br(eurobraille):dot1+dot2+dot4+dot5+dot6+backspace",),
 			"kb:8": ("br(eurobraille):dot1+dot2+dot5+dot6+backspace",),
 			"kb:9": ("br(eurobraille):dot2+dot4+dot6+backspace",),
 			"kb:0": ("br(eurobraille):dot3+dot4+dot5+dot6+backspace",),
 			"kb:,": ("br(eurobraille):dot2+backspace",),
-			"kb:,": ("br(eurobraille):dot3+dot4+backspace",),
-			"kb:shift+8": ("br(eurobraille):dot3+dot5+backspace",),
+			"kb:/": ("br(eurobraille):dot3+dot4+backspace",),
+			"kb:*": ("br(eurobraille):dot3+dot5+backspace",),
 			"kb:-": ("br(eurobraille):dot3+dot6+backspace",),
 			"kb:shift+=": ("br(eurobraille):dot2+dot3+dot5+backspace",),
 			"kb:enter": ("br(eurobraille):dot3+dot4+dot5+backspace", "br(eurobraille):joystick2Center",),
-			"kb:escape": ("br(eurobraille):dot1+dot2+dot4+dot5+space",),
-			"kb:tab": ("br(eurobraille):dot2+dot5+dot6+space",),
+			"kb:escape": (
+				"br(eurobraille):dot1+dot2+dot4+dot5+space",
+				"br(eurobraille):l2",
+			),
+			"kb:tab": (
+				"br(eurobraille):dot2+dot5+dot6+space",
+				"br(eurobraille):l3",
+			),
 			"kb:shift+tab": ("br(eurobraille):dot2+dot3+dot5+space",),
 			"kb:printScreen": ("br(eurobraille):dot1+dot3+dot4+dot6+space",),
 			"kb:pause": ("br(eurobraille):dot1+dot4+space",),
@@ -523,9 +532,18 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			"kb:windows": ("br(eurobraille):dot1+dot2+dot3+dot4+backspace",),
 			"kb:capsLock": ("br(eurobraille):dot7+backspace", "br(eurobraille):dot8+backspace",),
 			"kb:numLock": ("br(eurobraille):dot3+backspace", "br(eurobraille):dot6+backspace",),
-			"kb:shift": ("br(eurobraille):dot7+space",),
-			"kb:control": ("br(eurobraille):dot7+dot8+space", "br(eurobraille):dot1+dot7+dot8+space", "br(eurobraille):dot4+dot7+dot8+space",),
-			"kb:alt": ("br(eurobraille):dot8+space", "br(eurobraille):dot1+dot8+space", "br(eurobraille):dot4+dot8+space",),
+			"kb:shift": (
+				"br(eurobraille):dot7+space",
+				"br(eurobraille):l4",
+			),
+			"kb:control": (
+				"br(eurobraille):dot7+dot8+space", "br(eurobraille):dot1+dot7+dot8+space", "br(eurobraille):dot4+dot7+dot8+space",
+				"br(eurobraille):l5",
+			),
+			"kb:alt": (
+				"br(eurobraille):dot8+space", "br(eurobraille):dot1+dot8+space", "br(eurobraille):dot4+dot8+space",
+				"br(eurobraille):l6",
+			),
 		},
 	})
 
