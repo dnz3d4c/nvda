@@ -211,6 +211,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		super(BrailleDisplayDriver, self).__init__()
 		self.numCells = 0
 		self.deviceType = None
+		self._deviceId = None
 		self._deviceData = {}
 		self._awaitingFrameReceipts  = {}
 		self._frameLength = None
@@ -457,8 +458,8 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 	script_disableHidInput.__doc__ = _("Disable eurobraille HID keyboard simulation")
 
 	__gestures = {
-		"br(eurobraille):l1+joystick1Down": "enableHidInput",
-		"br(eurobraille):l8+joystick1Down": "disableHidInput",
+		"br(eurobraille.esytime):l1+joystick1Down": "enableHidInput",
+		"br(eurobraille.esytime):l8+joystick1Down": "disableHidInput",
 	}
 
 	gestureMap = inputCore.GlobalGestureMap({
@@ -467,21 +468,16 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			"braille_scrollBack": (
 				"br(eurobraille):switch1Left",
 				"br(eurobraille):l1",
-				#"br(eurobraille):switch2Left",
-				#"br(eurobraille):switch3Left", "br(eurobraille):switch4Left",
-				#"br(eurobraille):switch5Left", "br(eurobraille):switch6Left",
 			),
 			"braille_scrollForward": (
 				"br(eurobraille):switch1Right",
 				"br(eurobraille):l8",
-				#"br(eurobraille):switch2Right",
-				#"br(eurobraille):switch3Right", "br(eurobraille):switch4Right",
-				#"br(eurobraille):switch5Right", "br(eurobraille):switch6Right",
 			),
 			"braille_toFocus": (
 				"br(eurobraille):switch1Left+switch1Right", "br(eurobraille):switch2Left+switch2Right",
 				"br(eurobraille):switch3Left+switch3Right", "br(eurobraille):switch4Left+switch4Right",
 				"br(eurobraille):switch5Left+switch5Right", "br(eurobraille):switch6Left+switch6Right",
+				"br(eurobraille):l1+l8", 
 			),
 			"review_previousLine": ("br(eurobraille):joystick1Up",),
 			"review_nextLine": ("br(eurobraille):joystick1Down",),
@@ -489,7 +485,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			"review_nextCharacter": ("br(eurobraille):joystick1Right",),
 			"reviewMode_previous": ("br(eurobraille):joystick1Left+joystick1Up",),
 			"reviewMode_next": ("br(eurobraille):joystick1Right+joystick1Down",),
-			# Esys has a dedicated key for backspace and combines backspace and space to perform a return.
+			# Esys and esytime have a dedicated key for backspace and combines backspace and space to perform a return.
 			"braille_eraseLastCell": ("br(eurobraille):backSpace",),
 			"braille_enter": ("br(eurobraille):backSpace+space",),
 			"kb:insert": (
