@@ -414,7 +414,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		# cells will already be padded up to numCells.
 		self._sendPacket(EB_BRAILLE_DISPLAY, EB_BRAILLE_DISPLAY_STATIC, "".join(chr(cell) for cell in cells))	
 
-	def _toggleHidInput(self):
+	def _setHidInput(self, state):
 		def announceUnavailableMessage():
 			# Translators: Message when Eurobraille HID keyboard simulation is unavailable.
 			ui.message(_("HID keyboard input simulation is unavailable."))
@@ -422,17 +422,23 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		if self.keys!=KEYS_ESITIME or not self.isHid:
 			announceUnavailableMessage()
 			return
-		# Cache the current input state
-		state = self._hidInput
-		self._sendPacket(EB_KEY, EB_KEY_USB_HID_MODE, str(int(not state)))
+		if state is 		self._hidInput:
+			if state:
+				# Translators: Message when Eurobraille HID keyboard simulation is already enabled.
+				ui.message(_('HID keyboard simulation already enabled'))
+			else:
+				# Translators: Message when Eurobraille HID keyboard simulation is already disabled.
+				ui.message(_('HID keyboard simulation already disabled'))
+			return
+		self._sendPacket(EB_KEY, EB_KEY_USB_HID_MODE, str(int(state)))
 		for i in xrange(3):
 			self._dev.waitForRead(self.timeout)
-			if state is not self._hidInput:
+			if state is self._hidInput:
 				break
-		if state is self._hidInput:
+		if state is not self._hidInput:
 			announceUnavailableMessage()
 			return
-		if self._hidInput:
+		if state:
 			# Translators: Message when Eurobraille HID keyboard simulation is enabled.
 			ui.message(_('HID keyboard simulation enabled'))
 		else:
@@ -440,13 +446,19 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			ui.message(_('HID keyboard simulation disabled'))
 
 	scriptCategory = SCRCAT_BRAILLE
-	def script_toggleHidInput(self, gesture):
-		self._toggleHidInput()
-	# Translators: Description of the script for Eurobraille displays that toggles HID keyboard simulation.
-	script_toggleHidInput.__doc__ = _("Toggle eurobraille HID keyboard simulation")
+	def script_enableHidInput(self, gesture):
+		self._setHidInput(True)
+	# Translators: Description of the script for Eurobraille displays that enables HID keyboard simulation.
+	script_enableHidInput.__doc__ = _("Enable eurobraille HID keyboard simulation")
+
+	def script_disableHidInput(self, gesture):
+		self._setHidInput(False)
+	# Translators: Description of the script for Eurobraille displays that disables HID keyboard simulation.
+	script_disableHidInput.__doc__ = _("Disable eurobraille HID keyboard simulation")
 
 	__gestures = {
-		"br(eurobraille):routing+switch1Left": "toggleHidInput",
+		"br(eurobraille):l1+joystick1Down": "enableHidInput",
+		"br(eurobraille):l8+joystick1Down": "disableHidInput",
 	}
 
 	gestureMap = inputCore.GlobalGestureMap({
