@@ -404,7 +404,8 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 				packet.insert(-1,chr(frame))
 				self._awaitingFrameReceipts[frame]=packet
 				self._frame=frame+1 if frame<0x7F else 0x20
-		self._dev.write("".join(packet))
+		writeStr="".join(packet)
+		self._dev.write(writeStr+"\x55"*(self._dev._writeSize-len(writeStr)))
 
 	def display(self, cells):
 		# cells will already be padded up to numCells.
