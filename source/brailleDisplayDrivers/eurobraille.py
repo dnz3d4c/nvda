@@ -233,11 +233,11 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 				log.debugWarning("Error while connecting to port %r"%port, exc_info=True)
 				continue
 
-			# Request device identification
-			self._sendPacket(EB_SYSTEM, EB_SYSTEM_IDENTITY)
-			# A device identification results in multiple packets.
-			# Make sure we've received everything before we continue
 			for i in xrange(5):
+				# Request device identification
+				self._sendPacket(EB_SYSTEM, EB_SYSTEM_IDENTITY)
+				# A device identification results in multiple packets.
+				# Make sure we've received everything before we continue
 				while self._dev.waitForRead(self.timeout):
 					continue
 				if self.numCells and self.deviceType:
@@ -403,19 +403,19 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 				self._frame=frame+1 if frame<0x7F else 0x20
 		packetStr=b"".join(packet)
 		if self.isHid:
-			self._sendHidPacket(packetStr)
+			self._sendHidPacket(chr(0)+packetStr)
 		else:
 			self._dev.write(packetStr)
 
 	def _sendHidPacket(self, packet):
 		assert self.isHid
-		blockSize = self._dev._writeSize-1
+		blockSize = self._dev._writeSize
 		# When the packet length exceeds C{blockSize}, the packet is split up into several block packets.
 		# These blocks are of size C{blockSize}.
 		bytesRemaining = packet
 		while bytesRemaining:
 			bytesToWrite=bytesRemaining[:blockSize]
-			hidPacket = b'\x00'+bytesToWrite+b"\x55"*(blockSize-len(bytesToWrite))
+			hidPacket = bytesToWrite+b"\x55"*(blockSize-len(bytesToWrite))
 			self._dev.write(hidPacket)
 			bytesRemaining = bytesRemaining[blockSize:]
 
