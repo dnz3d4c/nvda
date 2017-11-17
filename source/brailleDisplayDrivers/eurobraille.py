@@ -266,9 +266,10 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		try:
 			super(BrailleDisplayDriver, self).terminate()
 		finally:
-			# Make sure the device gets closed.
-			# If it doesn't, we may not be able to re-open it later.
+			# We must sleep before closing the port as not doing this can leave the display in a bad state where it can not be re-initialized.
+			time.sleep(self.timeout)
 			self._dev.close()
+			self._dev = None
 			self._deviceData.clear()
 
 	def _onReceive(self, data):
