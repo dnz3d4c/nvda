@@ -174,14 +174,13 @@ class WordDocument(UIADocumentWithTableNavigation,WordDocumentNode,WordDocumentB
 	def _formatChangeScriptHelper(self,gesture,**kwargs):
 		formatConfig=defaultdict(lambda: False,**kwargs)
 		info=self.makeTextInfo(textInfos.POSITION_SELECTION)
-		info.expand(textInfos.UNIT_CHARACTER)
 		oldFormatField=self._getFormatFieldAtPosition(info,formatConfig)
 		gesture.send()
 		info=self.makeTextInfo(textInfos.POSITION_SELECTION)
-		info.expand(textInfos.UNIT_CHARACTER)
 		newFormatField=self._getFormatFieldAtPosition(info,formatConfig)
 		text=info.getFormatFieldSpeech(newFormatField,attrsCache=oldFormatField,formatConfig=formatConfig,extraDetail=True)
-		ui.message(text)
+		if text:
+			ui.message(text)
 
 	def script_toggleBold(self,gesture):
 		self._formatChangeScriptHelper(gesture,reportFontAttributes=True)
