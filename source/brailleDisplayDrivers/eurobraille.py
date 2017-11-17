@@ -24,37 +24,37 @@ import time
 BAUD_RATE = 9600
 PARITY = serial.PARITY_EVEN
 
-STX=b'\x02'
-ETX=b'\x03'
-ACK=b'\x06'
-EB_SYSTEM=b'S' # 0x53
-EB_MODE=b'R' # 0x52
-EB_KEY=b'K' # 0x4b
-EB_BRAILLE_DISPLAY=b'B' # 0x42
-EB_KEY_INTERACTIVE=b'I' # 0x49
-EB_KEY_INTERACTIVE_SINGLE_CLICK=b'\x01'
-EB_KEY_INTERACTIVE_REPETITION=b'\x02'
-EB_KEY_INTERACTIVE_DOUBLE_CLICK=b'\x03'
+STX = b'\x02'
+ETX = b'\x03'
+ACK = b'\x06'
+EB_SYSTEM = b'S' # 0x53
+EB_MODE = b'R' # 0x52
+EB_KEY = b'K' # 0x4b
+EB_BRAILLE_DISPLAY = b'B' # 0x42
+EB_KEY_INTERACTIVE = b'I' # 0x49
+EB_KEY_INTERACTIVE_SINGLE_CLICK = b'\x01'
+EB_KEY_INTERACTIVE_REPETITION = b'\x02'
+EB_KEY_INTERACTIVE_DOUBLE_CLICK = b'\x03'
 EB_KEY_BRAILLE='B' # 0x42
-EB_KEY_COMMAND=b'C' # 0x43
-EB_KEY_QWERTY=b'Z' # 0x5a
-EB_KEY_USB_HID_MODE=b'U' # 0x55
-EB_BRAILLE_DISPLAY_STATIC=b'S' # 0x53
-EB_SYSTEM_IDENTITY=b'I' # 0x49
-EB_SYSTEM_DISPLAY_LENGTH=b'G' # 0x47
-EB_SYSTEM_TYPE=b'T' # 0x54
-EB_SYSTEM_PROTOCOL=b'P' #0x50
-EB_SYSTEM_FRAME_LENGTH=b'M' # 0x4d
-EB_ENCRYPTION_KEY=b'Z' # 0x5a
-EB_MODE_DRIVER=b'P' # 0x50
-EB_MODE_INTERNAL=b'I' # 0x49
-EB_MODE_MENU=b'M' # 0x4d
-EB_IRIS_TEST=b'T' # 0x54
-EB_IRIS_TEST_sub=b'L' # 0x4c
-EB_VISU=b'V' # 0x56
-EB_VISU_DOT=b'D' # 0x44
+EB_KEY_COMMAND = b'C' # 0x43
+EB_KEY_QWERTY = b'Z' # 0x5a
+EB_KEY_USB_HID_MODE = b'U' # 0x55
+EB_BRAILLE_DISPLAY_STATIC = b'S' # 0x53
+EB_SYSTEM_IDENTITY = b'I' # 0x49
+EB_SYSTEM_DISPLAY_LENGTH = b'G' # 0x47
+EB_SYSTEM_TYPE = b'T' # 0x54
+EB_SYSTEM_PROTOCOL = b'P' #0x50
+EB_SYSTEM_FRAME_LENGTH = b'M' # 0x4d
+EB_ENCRYPTION_KEY = b'Z' # 0x5a
+EB_MODE_DRIVER = b'P' # 0x50
+EB_MODE_INTERNAL = b'I' # 0x49
+EB_MODE_MENU = b'M' # 0x4d
+EB_IRIS_TEST = b'T' # 0x54
+EB_IRIS_TEST_sub = b'L' # 0x4c
+EB_VISU = b'V' # 0x56
+EB_VISU_DOT = b'D' # 0x44
 
-KEYS_STICK=OrderedDict({
+KEYS_STICK = OrderedDict({
 	0x10000: "joystick1Up",
 	0x20000: "joystick1Down",
 	0x40000: "joystick1Right",
@@ -66,7 +66,7 @@ KEYS_STICK=OrderedDict({
 	0x8000000: "joystick2Left",
 	0x10000000: "joystick2Center"
 })
-KEYS_ESYS=OrderedDict({
+KEYS_ESYS = OrderedDict({
 	0x01: "switch1Right",
 	0x02: "switch1Left",
 	0x04: "switch2Right",
@@ -81,7 +81,7 @@ KEYS_ESYS=OrderedDict({
 	0x800: "switch6Left",
 })
 KEYS_ESYS.update(KEYS_STICK)
-KEYS_IRIS=OrderedDict({
+KEYS_IRIS = OrderedDict({
 	0x01: "l1",
 	0x02: "l2",
 	0x04: "l3",
@@ -96,7 +96,7 @@ KEYS_IRIS=OrderedDict({
 	0x800: "leftArrow",
 })
 
-KEYS_ESITIME=OrderedDict({
+KEYS_ESITIME = OrderedDict({
 	0x01: "l1",
 	0x02: "l2",
 	0x04: "l3",
@@ -170,7 +170,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 	@classmethod
 	def getPossiblePorts(cls):
 		ports = OrderedDict()
-		comPorts = list(hwPortUtils.listComPorts(onlyAvailable=True))
+		comPorts = list(hwPortUtils.listComPorts(onlyAvailable = True))
 		try:
 			next(cls._getAutoPorts(comPorts))
 			ports.update((cls.AUTOMATIC_PORT,))
@@ -178,7 +178,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			pass
 		for portInfo in comPorts:
 			# Translators: Name of a serial communications port.
-			ports[portInfo["port"]] = _("Serial: {portName}").format(portName=portInfo["friendlyName"])
+			ports[portInfo["port"]] = _("Serial: {portName}").format(portName = portInfo["friendlyName"])
 		return ports
 
 	@classmethod
@@ -280,7 +280,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			byte1= data
 			stream = self._dev
 		if byte1 == ACK:
-			frame=ord(stream.read(1))
+			frame = ord(stream.read(1))
 			self._handleAck(frame)
 		elif byte1 == STX:
 			length = bytesToInt(stream.read(2))-2 # lenght includes the lenght itself
@@ -328,24 +328,24 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 
 	def _handleSystemPacket(self, type, data):
 		if type==EB_SYSTEM_TYPE:
-			deviceType=ord(data)
+			deviceType = ord(data)
 			self.deviceType = DEVICE_TYPES[deviceType]
 			if 0x01<=deviceType<=0x06: # Iris
-				self.keys=KEYS_IRIS
+				self.keys = KEYS_IRIS
 			elif 0x07<=deviceType<=0x0d: # Esys
-				self.keys=KEYS_ESYS
+				self.keys = KEYS_ESYS
 			elif 0x0e<=deviceType<=0x11: # Esitime
-				self.keys=KEYS_ESITIME
+				self.keys = KEYS_ESITIME
 			else:
 				log.debugWarning("Unknown device identifier %r"%data)
 		elif type==EB_SYSTEM_DISPLAY_LENGTH:
-			self.numCells=ord(data)
+			self.numCells = ord(data)
 		elif type==EB_SYSTEM_FRAME_LENGTH:
-			self._frameLength=bytesToInt(data)
+			self._frameLength = bytesToInt(data)
 		elif type==EB_SYSTEM_PROTOCOL and self.isHid:
-			protocol=data.rstrip("\x00 ")
+			protocol = data.rstrip("\x00 ")
 			try:
-				version=float(protocol[:4])
+				version = float(protocol[:4])
 			except ValueError:
 				pass
 			else:
@@ -397,13 +397,13 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		]
 		if self.receivesAckPackets:
 			with self._frameLock:
-				frame=self._frame
+				frame = self._frame
 				packet.insert(-1,chr(frame))
-				self._awaitingFrameReceipts[frame]=packet
-				self._frame=frame+1 if frame<0x7F else 0x20
-		packetStr=b"".join(packet)
+				self._awaitingFrameReceipts[frame] = packet
+				self._frame = frame+1 if frame<0x7F else 0x20
+		packetStr = b"".join(packet)
 		if self.isHid:
-			self._sendHidPacket(chr(0)+packetStr)
+			self._sendHidPacket(packetStr)
 		else:
 			self._dev.write(packetStr)
 
@@ -412,9 +412,9 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		blockSize = self._dev._writeSize
 		# When the packet length exceeds C{blockSize}, the packet is split up into several block packets.
 		# These blocks are of size C{blockSize}.
-		bytesRemaining = packet
+		bytesRemaining = chr(0)+packet
 		while bytesRemaining:
-			bytesToWrite=bytesRemaining[:blockSize]
+			bytesToWrite = bytesRemaining[:blockSize]
 			hidPacket = bytesToWrite+b"\x55"*(blockSize-len(bytesToWrite))
 			self._dev.write(hidPacket)
 			bytesRemaining = bytesRemaining[blockSize:]
