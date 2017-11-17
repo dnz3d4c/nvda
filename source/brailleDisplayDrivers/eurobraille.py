@@ -237,8 +237,11 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			self._sendPacket(EB_SYSTEM, EB_SYSTEM_IDENTITY)
 			# A device identification results in multiple packets.
 			# Make sure we've received everything before we continue
-			while self._dev.waitForRead(self.timeout):
-				continue
+			for i in xrange(5):
+				while self._dev.waitForRead(self.timeout):
+					continue
+				if self.numCells and self.deviceType:
+					break
 			if self.numCells and self.deviceType:
 				# A display responded.
 				# Make sure visualisation packets are disabled, as we ignore them anyway.
@@ -383,11 +386,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 
 	def _sendPacket(self, packetType, packetSubType, packetData=b""):
 		packetSize=len(packetData)+4
-		packet=[]
-		if self.isHid:
-			# HID Packets start with 0x00.
-			packet.append("\x00")
-		packet.extend([
+		packet=[
 			STX,
 			chr((packetSize>>8)&0xff),
 			chr(packetSize&0xff),
@@ -395,18 +394,30 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			packetSubType,
 			packetData,
 			ETX
-		])
+		]
 		if self.receivesAckPackets:
 			with self._frameLock:
 				frame=self._frame
 				packet.insert(-1,chr(frame))
 				self._awaitingFrameReceipts[frame]=packet
 				self._frame=frame+1 if frame<0x7F else 0x20
-		writeStr=b"".join(packet)
+		packetStr=b"".join(packet)
 		if self.isHid:
-			self._dev.write(writeStr+b"\x55"*(self._dev._writeSize-len(writeStr)))
+			self._sendHidPacket(packetStr)
 		else:
-			self._dev.write(writeStr)
+			self._dev.write(packetStr)
+
+	def _sendHidPacket(self, packet):
+		assert self.isHid
+		blockSize = self._dev._writeSize-1
+		# When the packet length exceeds C{blockSize}, the packet is split up into several block packets.
+		# These blocks are of size C{blockSize}.
+		bytesRemaining = packet
+		while bytesRemaining:
+			bytesToWrite=bytesRemaining[:blockSize]
+			hidPacket = b'\x00'+bytesToWrite+b"\x55"*(blockSize-len(bytesToWrite))
+			self._dev.write(hidPacket)
+			bytesRemaining = bytesRemaining[blockSize:]
 
 	def display(self, cells):
 		# cells will already be padded up to numCells.
@@ -417,7 +428,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			# Translators: Message when Eurobraille HID keyboard simulation is unavailable.
 			ui.message(_("HID keyboard input simulation is unavailable."))
 
-		if self.keys!=KEYS_ESITIME or not self.isHid:
+		if not self.isHid:
 			announceUnavailableMessage()
 			return
 		if state is 		self._hidInput:
@@ -456,7 +467,9 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 
 	__gestures = {
 		"br(eurobraille.esytime):l1+joystick1Down": "enableHidInput",
+		"br(eurobraille):switch1Left+joystick1Down": "enableHidInput",
 		"br(eurobraille.esytime):l8+joystick1Down": "disableHidInput",
+		"br(eurobraille):switch1Right+joystick1Down": "disableHidInput",
 	}
 
 	gestureMap = inputCore.GlobalGestureMap({
