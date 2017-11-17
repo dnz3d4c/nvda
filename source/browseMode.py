@@ -49,8 +49,11 @@ def reportPassThrough(treeInterceptor,onlyIfChanged=True):
 			nvwave.playWaveFile(sound)
 		else:
 			if treeInterceptor.passThrough:
+				# Translators: The mode to interact with controls in documents
 				ui.message(_("Focus mode"))
 			else:
+				# Translators: The mode that presents text in a flat representation
+				# that can be navigated with the cursor keys like in a text document
 				ui.message(_("Browse mode"))
 		reportPassThrough.last = treeInterceptor.passThrough
 reportPassThrough.last = False
@@ -796,7 +799,7 @@ class ElementsListDialog(wx.Dialog):
 
 		# Translators: The label of an editable text field to filter the elements
 		# in the browse mode Elements List dialog.
-		filterText = _("&Filter by:")
+		filterText = _("Filt&er by:")
 		labeledCtrl = gui.guiHelper.LabeledControlHelper(self, filterText, wx.TextCtrl)
 		self.filterEdit = labeledCtrl.control
 		self.filterEdit.Bind(wx.EVT_TEXT, self.onFilterEditTextChange)
@@ -1569,8 +1572,8 @@ class BrowseModeDocumentTreeInterceptor(documentBase.DocumentWithTableNavigation
 		info.expand(textInfos.UNIT_CHARACTER)
 		container=self.getEnclosingContainerRange(info)
 		if not container:
-			# Translators: Reported when the user attempts to move to the start or end of a container (list, table, etc.) 
-			# But there is no container. 
+			# Translators: Reported when the user attempts to move to the start or end of a container
+			# (list, table, etc.) but there is no container. 
 			ui.message(_("Not in a container"))
 			return
 		container.collapse()
@@ -1587,6 +1590,8 @@ class BrowseModeDocumentTreeInterceptor(documentBase.DocumentWithTableNavigation
 		info.expand(textInfos.UNIT_CHARACTER)
 		container=self.getEnclosingContainerRange(info)
 		if not container:
+			# Translators: Reported when the user attempts to move to the start or end of a container
+			# (list, table, etc.) but there is no container. 
 			ui.message(_("Not in a container"))
 			return
 		container.collapse(end=True)

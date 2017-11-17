@@ -83,4 +83,3 @@ class WordDocument(Window):
 		"kb:control+pageDown": "caret_moveByLine",
 		"kb:NVDA+alt+c":"reportCurrentComment",
 	}
- 
