@@ -397,8 +397,8 @@ Review modes are a replacement for the older Flat Review concept found in NVDA.
 The following commands switch between review modes:
 %kc:beginInclude
 || Name | Desktop key | Laptop key | Touch | Description |
-| switch to next review mode | NVDA+numpad7 | NVDA+pageUp | 2-finger flick up | switches to the next available review mode |
-| switch to previous review mode | NVDA+numpad1 | NVDA+pageDown | 2-finger flick down | switches to the previous available review mode |
+| Switch to next review mode | NVDA+numpad7 | NVDA+pageUp | 2-finger flick up | switches to the next available review mode |
+| Switch to previous review mode | NVDA+numpad1 | NVDA+pageDown | 2-finger flick down | switches to the previous available review mode |
 %kc:endInclude
 
 +++ Object Review +++[ObjectReview]
@@ -2446,15 +2446,69 @@ Following are the key assignments for these displays with NVDA.
 Please see the display's documentation for descriptions of where these keys can be found.
 %kc:beginInclude
 || Name | Key |
-| Scroll braille display back | esys:switch1-6left |
-| Scroll braille display forward | esys:switch1-6Right |
+| Scroll braille display back | switch1-6left, l1 |
+| Scroll braille display forward | switch1-6Right, l8 |
+| Move to current focus | switch1-6Left+switch1-6Right, l1+l8 |
 | Route to braille cell | routing, doubleRouting|
-| upArrow key | joystick2Up |
-| downArrow key | joystick2Down |
-| leftArrow key | joystick2Left |
-| rightArrow key | joystick2Right |
-| enter key | dot8, backspace+space |
-| backspace key | dot7, backspace |
+| Move to previous line in review | joystick1Up |
+| Move to next line in review | joystick1Down |
+| Move to previous character in review | joystick1Left |
+| Move to next character in review | joystick1Right |
+| Switch to previous review mode | joystick1Left+joystick1Up |
+| Switch to next review mode | joystick1Right+joystick1Down |
+| Erase the last entered braille cell or character | backSpace |
+| Translate any braille input and press the enter key | backSpace+space |
+| insert key | dot3+dot5+space, l7 |
+| delete key | dot3+dot6+space |
+| home key | dot1+dot2+dot3+space, joystick2Left+joystick2Up |
+| end key | dot4+dot5+dot6+space, joystick2Right+joystick2Down |
+| leftArrow key | dot2+space, joystick2Left |
+| rightArrow key | dot5+space, joystick2Right |
+| upArrow key | dot1+space, joystick2Up |
+| downArrow key | dot6+space, joystick2Down |
+| enter key | joystick2Center |
+| pageUp key | dot1+dot3+space |
+| pageDown key | dot4+dot6+space |
+| numpad1 key | dot1+dot6+backspace |
+| numpad2 key | dot1+dot2+dot6+backspace |
+| numpad3 key | dot1+dot4+dot6+backspace |
+| numpad4 key | dot1+dot4+dot5+dot6+backspace |
+| numpad5 key | dot1+dot5+dot6+backspace |
+| numpad6 key | dot1+dot2+dot4+dot6+backspace |
+| numpad7 key | dot1+dot2+dot4+dot5+dot6+backspace |
+| numpad8 key | dot1+dot2+dot5+dot6+backspace |
+| numpad9 key | dot2+dot4+dot6+backspace |
+| numpadInsert key | dot3+dot4+dot5+dot6+backspace |
+| numpadDecimal key | dot2+backspace |
+| numpadDivide key | dot3+dot4+backspace |
+| numpadMultiply key | dot3+dot5+backspace |
+| numpadMinus key | dot3+dot6+backspace |
+| numpadPlus key | dot2+dot3+dot5+backspace |
+| numpadEnter key | dot3+dot4+dot5+backspace |
+| escape key | dot1+dot2+dot4+dot5+space, l2 |
+| tab key | dot2+dot5+dot6+space, l3 |
+| shift+tab key | dot2+dot3+dot5+space |
+| printScreen key | dot1+dot3+dot4+dot6+space |
+| pause key | dot1+dot4+space |
+| applications key | dot5+dot6+backspace |
+| f1 key | dot1+backspace |
+| f2 key | dot1+dot2+backspace |
+| f3 key | dot1+dot4+backspace |
+| f4 key | dot1+dot4+dot5+backspace |
+| f5 key | dot1+dot5+backspace |
+| f6 key | dot1+dot2+dot4+backspace |
+| f7 key | dot1+dot2+dot4+dot5+backspace |
+| f8 key | dot1+dot2+dot5+backspace |
+| f9 key | dot2+dot4+backspace |
+| f10 key | dot2+dot4+dot5+backspace |
+| f11 key | dot1+dot3+backspace |
+| f12 key | dot1+dot2+dot3+backspace |
+| windows key | dot1+dot2+dot3+dot4+backspace |
+| capsLock key | dot7+backspace, dot8+backspace |
+| numLock key | dot3+backspace, dot6+backspace |
+| shift key | dot7+space, l4 |
+| control key | dot7+dot8+space, dot1+dot7+dot8+space, dot4+dot7+dot8+space, l5 |
+| alt key | dot8+space, dot1+dot8+space, dot4+dot8+space, l6 |
 %kc:endInclude
 
 ++ BRLTTY ++
