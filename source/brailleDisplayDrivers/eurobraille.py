@@ -31,7 +31,6 @@ EB_SYSTEM=b'S' # 0x53
 EB_MODE=b'R' # 0x52
 EB_KEY=b'K' # 0x4b
 EB_BRAILLE_DISPLAY=b'B' # 0x42
-EB_END_KEY=b'E' # 0x45
 EB_KEY_INTERACTIVE=b'I' # 0x49
 EB_KEY_INTERACTIVE_SINGLE_CLICK=b'\x01'
 EB_KEY_INTERACTIVE_REPETITION=b'\x02'
@@ -39,28 +38,21 @@ EB_KEY_INTERACTIVE_DOUBLE_CLICK=b'\x03'
 EB_KEY_BRAILLE='B' # 0x42
 EB_KEY_COMMAND=b'C' # 0x43
 EB_KEY_QWERTY=b'Z' # 0x5a
-EB_KEY_USB=b'u' # 0x75
 EB_KEY_USB_HID_MODE=b'U' # 0x55
 EB_BRAILLE_DISPLAY_STATIC=b'S' # 0x53
 EB_SYSTEM_IDENTITY=b'I' # 0x49
-EB_SYSTEM_NAME=b'N' # 0x4e
-EB_SYSTEM_SERIAL = 'S' # 0x53
-EB_SYSTEM_BATTERY=b'B' # 0x42
 EB_SYSTEM_DISPLAY_LENGTH=b'G' # 0x47
 EB_SYSTEM_TYPE=b'T' # 0x54
-EB_SYSTEM_OPTION=b'O'
-EB_SYSTEM_SOFTWARE=b'W'
-EB_SYSTEM_PROTOCOL=b'P'
-EB_SYSTEM_FRAME_LENGTH=b'M'
-EB_SYSTEM_DATE_AND_TIME=b'D'
+EB_SYSTEM_PROTOCOL=b'P' #0x50
+EB_SYSTEM_FRAME_LENGTH=b'M' # 0x4d
 EB_ENCRYPTION_KEY=b'Z' # 0x5a
-EB_MODE_PILOT=b'P'
-EB_MODE_INTERNAL=b'I'
-EB_MODE_MENU=b'M'
-EB_IRIS_TEST=b'T'
-EB_IRIS_TEST_sub=b'L'
-EB_VISU=b'V'
-EB_VISU_DOT=b'D'
+EB_MODE_DRIVER=b'P' # 0x50
+EB_MODE_INTERNAL=b'I' # 0x49
+EB_MODE_MENU=b'M' # 0x4d
+EB_IRIS_TEST=b'T' # 0x54
+EB_IRIS_TEST_sub=b'L' # 0x4c
+EB_VISU=b'V' # 0x56
+EB_VISU_DOT=b'D' # 0x44
 
 KEYS_STICK=OrderedDict({
 	0x10000: "joystick1Up",
@@ -293,24 +285,28 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			assert(stream.read(1)==ETX)
 			packetType = packet[0]
 			packetSubType = packet[1]
-			packetData = packet[2:] if length>2 else ""
+			packetData = packet[2:] if length>2 else b""
 			if packetType==EB_SYSTEM:
 				self._handleSystemPacket(packetSubType, packetData)
-			elif packetType==EB_MODE and packetSubType  == EB_MODE_PILOT:
-				# This packet means the display is returning from internal mode
-				# Rewrite the current display content
-				braille.handler.update()
+			elif packetType==EB_MODE:
+				if packetSubType  == EB_MODE_DRIVER:
+					log.debug("Braille display switched to driver mode, updating display...")
+					braille.handler.update()
+				elif packetSubType  == EB_MODE_INTERNAL:
+					log.debug("Braille display switched to internal mode")
 			elif packetType==EB_KEY:
 				self._handleKeyPacket(packetSubType, packetData)
 			elif packetType==EB_IRIS_TEST and packetSubType==EB_IRIS_TEST_sub:
 				# Ping command sent by Iris every two seconds, send it back on the main thread.
+				# This means that, if the main thread is frozen, Iris will be notified of this.
+				log.debug("Received ping from Iris braille display")
 				wx.CallAfter(self._sendPacket, packetType, packetSubType, packetData)
 			elif packetType==EB_VISU:
 				log.debug("Ignoring visualisation packet")
 			elif packetType==EB_ENCRYPTION_KEY:
 				log.debug("Ignoring encryption key packet")
 			else:
-				log.debug("Ignoring packet: type %s, subtype %s, data %s"%(
+				log.debug("Ignoring packet: type %r, subtype %r, data %r"%(
 					packetType,
 					packetSubType,
 					packetData
@@ -338,7 +334,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			elif 0x0e<=deviceType<=0x11: # Esitime
 				self.keys=KEYS_ESITIME
 			else:
-				log.debugWarning("Unknown device identifier %s"%data)
+				log.debugWarning("Unknown device identifier %r"%data)
 		elif type==EB_SYSTEM_DISPLAY_LENGTH:
 			self.numCells=ord(data)
 		elif type==EB_SYSTEM_FRAME_LENGTH:
@@ -385,7 +381,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			else:
 				del self.keysDown[group]
 
-	def _sendPacket(self, packetType, packetSubType, packetData=""):
+	def _sendPacket(self, packetType, packetSubType, packetData=b""):
 		packetSize=len(packetData)+4
 		packet=[]
 		if self.isHid:
@@ -406,15 +402,15 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 				packet.insert(-1,chr(frame))
 				self._awaitingFrameReceipts[frame]=packet
 				self._frame=frame+1 if frame<0x7F else 0x20
-		writeStr="".join(packet)
+		writeStr=b"".join(packet)
 		if self.isHid:
-			self._dev.write(writeStr+"\x55"*(self._dev._writeSize-len(writeStr)))
+			self._dev.write(writeStr+b"\x55"*(self._dev._writeSize-len(writeStr)))
 		else:
 			self._dev.write(writeStr)
 
 	def display(self, cells):
 		# cells will already be padded up to numCells.
-		self._sendPacket(EB_BRAILLE_DISPLAY, EB_BRAILLE_DISPLAY_STATIC, "".join(chr(cell) for cell in cells))	
+		self._sendPacket(EB_BRAILLE_DISPLAY, EB_BRAILLE_DISPLAY_STATIC, b"".join(chr(cell) for cell in cells))	
 
 	def _setHidInput(self, state):
 		def announceUnavailableMessage():
