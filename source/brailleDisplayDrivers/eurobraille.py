@@ -22,7 +22,6 @@ import ui
 import time
 
 BAUD_RATE = 9600
-PARITY = serial.PARITY_EVEN
 
 STX = b'\x02'
 ETX = b'\x03'
@@ -228,12 +227,21 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 						exclusive=False
 					)
 				else:
-					self._dev = hwIo.Serial(port, baudrate=BAUD_RATE, timeout=self.timeout, writeTimeout=self.timeout, onReceive=self._onReceive)
+					self._dev = hwIo.Serial(
+						port,
+						baudrate=BAUD_RATE,
+						bytesize=serial.EIGHTBITS,
+						parity=serial.PARITY_EVEN,
+						stopbits=serial.STOPBITS_ONE,
+						timeout=self.timeout,
+						writeTimeout=self.timeout,
+						onReceive=self._onReceive
+					)
 			except EnvironmentError:
 				log.debugWarning("Error while connecting to port %r"%port, exc_info=True)
 				continue
 
-			for i in xrange(5):
+			for i in xrange(3):
 				# Request device identification
 				self._sendPacket(EB_SYSTEM, EB_SYSTEM_IDENTITY)
 				# A device identification results in multiple packets.
