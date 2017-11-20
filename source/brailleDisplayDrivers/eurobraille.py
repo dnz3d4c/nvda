@@ -202,7 +202,6 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		super(BrailleDisplayDriver, self).__init__()
 		self.numCells = 0
 		self.deviceType = None
-		self._deviceId = None
 		self._deviceData = {}
 		self._awaitingFrameReceipts  = {}
 		self._frameLength = None
@@ -377,17 +376,18 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			log.debug("Ignoring key repetition")
 			return
 		self.keysDown[group] |= arg
-		if group == EB_KEY_COMMAND and arg>=self.keysDown[group]:
+		isIris = self.deviceType.startswith("Iris")
+		if not isIris and group == EB_KEY_COMMAND and arg>=self.keysDown[group]:
 			# Started a gesture including command keys
 			self._ignoreCommandKeyReleases = False
 		else:
-			if group != EB_KEY_COMMAND or not self._ignoreCommandKeyReleases:
+			if isIris or group != EB_KEY_COMMAND or not self._ignoreCommandKeyReleases:
 				try:
 					inputCore.manager.executeGesture(InputGesture(self))
 				except inputCore.NoInputGestureAction:
 					pass
-				self._ignoreCommandKeyReleases = group == EB_KEY_COMMAND or self.keysDown[EB_KEY_COMMAND]>0
-			if group == EB_KEY_COMMAND:
+				self._ignoreCommandKeyReleases = not isIris and (group == EB_KEY_COMMAND or self.keysDown[EB_KEY_COMMAND]>0)
+			if not isIris and group == EB_KEY_COMMAND:
 				self.keysDown[group] = arg
 			else:
 				del self.keysDown[group]
@@ -584,7 +584,7 @@ class InputGesture(braille.BrailleDisplayGesture, brailleInput.BrailleInputGestu
 
 	def __init__(self, display):
 		super(InputGesture, self).__init__()
-		self.model = display.deviceType.split(" ")[0]
+		self.model = display.deviceType.lower().split(" ")[0]
 		keysDown = dict(display.keysDown)
 		self.keyNames = names = []
 		for group, groupKeysDown in keysDown.iteritems():
