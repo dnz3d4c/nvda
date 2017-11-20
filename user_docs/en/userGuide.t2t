@@ -2462,10 +2462,10 @@ Please see the display's documentation for descriptions of where these keys can 
 | delete key | dot3+dot6+space |
 | home key | dot1+dot2+dot3+space, joystick2Left+joystick2Up |
 | end key | dot4+dot5+dot6+space, joystick2Right+joystick2Down |
-| leftArrow key | dot2+space, joystick2Left |
-| rightArrow key | dot5+space, joystick2Right |
-| upArrow key | dot1+space, joystick2Up |
-| downArrow key | dot6+space, joystick2Down |
+| leftArrow key | dot2+space, joystick2Left, leftArrow |
+| rightArrow key | dot5+space, joystick2Right, rightArrow |
+| upArrow key | dot1+space, joystick2Up, upArrow |
+| downArrow key | dot6+space, joystick2Down, downArrow |
 | enter key | joystick2Center |
 | pageUp key | dot1+dot3+space |
 | pageDown key | dot4+dot6+space |
