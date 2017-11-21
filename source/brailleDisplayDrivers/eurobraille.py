@@ -441,7 +441,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		# cells will already be padded up to numCells.
 		self._sendPacket(EB_BRAILLE_DISPLAY, EB_BRAILLE_DISPLAY_STATIC, b"".join(chr(cell) for cell in cells))	
 
-	def _setHidInput(self, state):
+	def _setHidKeyboardInput(self, state):
 		def announceUnavailableMessage():
 			# Translators: Message when Eurobraille HID keyboard simulation is unavailable.
 			ui.message(_("HID keyboard input simulation is unavailable."))
@@ -473,21 +473,21 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			ui.message(_('HID keyboard simulation disabled'))
 
 	scriptCategory = SCRCAT_BRAILLE
-	def script_enableHidInput(self, gesture):
-		self._setHidInput(True)
+	def script_enableHidKeyboardInput(self, gesture):
+		self._setHidKeyboardInput(True)
 	# Translators: Description of the script for Eurobraille displays that enables HID keyboard simulation.
-	script_enableHidInput.__doc__ = _("Enable eurobraille HID keyboard simulation")
+	script_enableHidKeyboardInput.__doc__ = _("Enable eurobraille HID keyboard simulation")
 
-	def script_disableHidInput(self, gesture):
-		self._setHidInput(False)
+	def script_disableHidKeyboardInput(self, gesture):
+		self._setHidKeyboardInput(False)
 	# Translators: Description of the script for Eurobraille displays that disables HID keyboard simulation.
-	script_disableHidInput.__doc__ = _("Disable eurobraille HID keyboard simulation")
+	script_disableHidKeyboardInput.__doc__ = _("Disable eurobraille HID keyboard simulation")
 
 	__gestures = {
-		"br(eurobraille.esytime):l1+joystick1Down": "enableHidInput",
-		"br(eurobraille):switch1Left+joystick1Down": "enableHidInput",
-		"br(eurobraille.esytime):l8+joystick1Down": "disableHidInput",
-		"br(eurobraille):switch1Right+joystick1Down": "disableHidInput",
+		"br(eurobraille.esytime):l1+joystick1Down": "enableHidKeyboardInput",
+		"br(eurobraille):switch1Left+joystick1Down": "enableHidKeyboardInput",
+		"br(eurobraille.esytime):l8+joystick1Down": "disableHidKeyboardInput",
+		"br(eurobraille):switch1Right+joystick1Down": "disableHidKeyboardInput",
 	}
 
 	gestureMap = inputCore.GlobalGestureMap({
