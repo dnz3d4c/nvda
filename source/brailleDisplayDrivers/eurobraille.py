@@ -207,7 +207,8 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		self._frameLength = None
 		self._frame = 0x20
 		self._frameLock = threading.Lock()
-		self._hidInput = False
+		self._hidKeyboardInput = False
+		self._hidInputBuffer = ""
 
 		if port == "auto":
 			tryPorts = self._getAutoPorts(hwPortUtils.listComPorts(onlyAvailable=True))
@@ -243,6 +244,8 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			for i in xrange(3):
 				# Request device identification
 				self._sendPacket(EB_SYSTEM, EB_SYSTEM_IDENTITY)
+				# Make sure visualisation packets are disabled, as we ignore them anyway.
+				self._sendPacket(EB_VISU, EB_VISU_DOT, '0')
 				# A device identification results in multiple packets.
 				# Make sure we've received everything before we continue
 				while self._dev.waitForRead(self.timeout):
@@ -251,8 +254,6 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 					break
 			if self.numCells and self.deviceType:
 				# A display responded.
-				# Make sure visualisation packets are disabled, as we ignore them anyway.
-				self._sendPacket(EB_VISU, EB_VISU_DOT, '0')
 				log.info("Found {device} connected via {type} ({port})".format(
 					device=self.deviceType, type=portType, port=port))
 				break
@@ -277,6 +278,10 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 	def _onReceive(self, data):
 		if self.isHid:
 			# data contains the entire packet.
+			# Check whether there is an incomplete packet in the buffer
+			if self._hidInputBuffer:
+				data = self._hidInputBuffer + data
+				self._hidInputBuffer = ""
 			# HID Packets start with 0x00.
 			byte0 = data[0]
 			assert byte0=="\x00", "byte 0 is %r"%byte0
@@ -292,7 +297,10 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		elif byte1 == STX:
 			length = bytesToInt(stream.read(2))-2 # lenght includes the lenght itself
 			packet = stream.read(length)
-			assert(stream.read(1)==ETX)
+			if self.isHid and not stream.read(1)==ETX:
+				# Incomplete packet
+				self._hidInputbuffer = data
+				return
 			packetType = packet[0]
 			packetSubType = packet[1]
 			packetData = packet[2:] if length>2 else b""
@@ -364,7 +372,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 	def _handleKeyPacket(self, group, data):
 		arg = bytesToInt(data)
 		if group == EB_KEY_USB_HID_MODE:
-			self._hidInput = bool(arg)
+			self._hidKeyboardInput = bool(arg)
 			return
 		if group == EB_KEY_QWERTY:
 			log.debug("Ignoring Iris AZERTY/QWERTY input")
@@ -439,7 +447,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		if not self.isHid:
 			announceUnavailableMessage()
 			return
-		if state is 		self._hidInput:
+		if state is 		self._hidKeyboardInput:
 			if state:
 				# Translators: Message when Eurobraille HID keyboard simulation is already enabled.
 				ui.message(_('HID keyboard simulation already enabled'))
@@ -450,9 +458,9 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		self._sendPacket(EB_KEY, EB_KEY_USB_HID_MODE, str(int(state)))
 		for i in xrange(3):
 			self._dev.waitForRead(self.timeout)
-			if state is self._hidInput:
+			if state is self._hidKeyboardInput:
 				break
-		if state is not self._hidInput:
+		if state is not self._hidKeyboardInput:
 			announceUnavailableMessage()
 			return
 		if state:
