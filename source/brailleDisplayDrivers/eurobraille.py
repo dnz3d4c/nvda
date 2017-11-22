@@ -434,8 +434,6 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			hidPacket = bytesToWrite+b"\x55"*(blockSize-len(bytesToWrite))
 			self._dev.write(hidPacket)
 			bytesRemaining = bytesRemaining[blockSize:]
-			if bytesRemaining:
-				time.sleep(self.timeout/4)
 
 	def display(self, cells):
 		# cells will already be padded up to numCells.
