@@ -278,13 +278,13 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 	def _onReceive(self, data):
 		if self.isHid:
 			# data contains the entire packet.
-			# Check whether there is an incomplete packet in the buffer
-			if self._hidInputBuffer:
-				data = self._hidInputBuffer + data
-				self._hidInputBuffer = ""
 			# HID Packets start with 0x00.
 			byte0 = data[0]
 			assert byte0=="\x00", "byte 0 is %r"%byte0
+			# Check whether there is an incomplete packet in the buffer
+			if self._hidInputBuffer:
+				data = self._hidInputBuffer + data[1:]
+				self._hidInputBuffer = ""
 			byte1 = data[1]
 			stream = StringIO(data)
 			stream.seek(2)
