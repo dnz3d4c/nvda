@@ -250,6 +250,7 @@ class WordDocument(UIADocumentWithTableNavigation,WordDocumentNode,WordDocumentB
 			date=dateObj.name
 			authorObj=dateObj.previous
 			author=authorObj.name
+			# Translators: The message reported for a comment in Microsoft Word
 			ui.message(_("{comment} by {author} on {date}").format(comment=comment,date=date,author=author))
 			return
 
