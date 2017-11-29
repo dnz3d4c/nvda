@@ -129,9 +129,9 @@ DEVICE_TYPES={
 
 USB_IDS_HID = {
 	"VID_C251&PID_1122", # Esys (version < 3.0, no SD card
-	"VID_C251&PID_1123", # Reserved
+	"VID_C251&PID_1123", # Esys (version >= 3.0, with HID keyboard, no SD card
 	"VID_C251&PID_1124", # Esys (version < 3.0, with SD card
-	"VID_C251&PID_1125", # Reserved
+	"VID_C251&PID_1125", # Esys (version >= 3.0, with HID keyboard, with SD card
 	"VID_C251&PID_1126", # Esys (version >= 3.0, no SD card
 	"VID_C251&PID_1127", # Reserved
 	"VID_C251&PID_1128", # Esys (version >= 3.0, with SD card
@@ -425,15 +425,17 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 
 	def _sendHidPacket(self, packet):
 		assert self.isHid
-		blockSize = self._dev._writeSize
+		blockSize = self._dev._writeSize-1
 		# When the packet length exceeds C{blockSize}, the packet is split up into several block packets.
 		# These blocks are of size C{blockSize}.
-		bytesRemaining = chr(0)+packet
+		bytesRemaining = packet
 		while bytesRemaining:
 			bytesToWrite = bytesRemaining[:blockSize]
-			hidPacket = bytesToWrite+b"\x55"*(blockSize-len(bytesToWrite))
+			hidPacket = b"\x00"+bytesToWrite+b"\x55"*(blockSize-len(bytesToWrite))
 			self._dev.write(hidPacket)
 			bytesRemaining = bytesRemaining[blockSize:]
+			if bytesRemaining:
+				time.sleep(0.02)
 
 	def display(self, cells):
 		# cells will already be padded up to numCells.
