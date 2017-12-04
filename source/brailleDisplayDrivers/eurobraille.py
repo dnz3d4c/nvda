@@ -370,9 +370,8 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		self._deviceData[type]=data.rstrip("\x00 ")
 
 	def _handleKeyPacket(self, group, data):
-		arg = bytesToInt(data)
 		if group == EB_KEY_USB_HID_MODE:
-			self._hidKeyboardInput = bool(arg)
+			self._hidKeyboardInput = bool(int(data))
 			return
 		if group == EB_KEY_QWERTY:
 			log.debug("Ignoring Iris AZERTY/QWERTY input")
@@ -380,6 +379,7 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 		if group == EB_KEY_INTERACTIVE and data[0]==EB_KEY_INTERACTIVE_REPETITION:
 			log.debug("Ignoring routing key %d repetition"%(ord(data[1])-1))
 			return
+		arg = bytesToInt(data)
 		if arg==self.keysDown[group]:
 			log.debug("Ignoring key repetition")
 			return
@@ -434,8 +434,6 @@ class BrailleDisplayDriver(braille.BrailleDisplayDriver, ScriptableObject):
 			hidPacket = b"\x00"+bytesToWrite+b"\x55"*(blockSize-len(bytesToWrite))
 			self._dev.write(hidPacket)
 			bytesRemaining = bytesRemaining[blockSize:]
-			if bytesRemaining:
-				time.sleep(0.02)
 
 	def display(self, cells):
 		# cells will already be padded up to numCells.
